@@ -37,16 +37,55 @@ class RepairTableGUI(object):
 		self.searchStr = tk.StringVar(self.searchFrame)
 		self.searchStr.set('Search by RA')
 
-		self.searchmenu = tk.OptionMenu(self.searchFrame, self.searchStr, 'Search by RA', "Search by Last name", "Search by model", "Search by Manufacturer", "Search by status")
+		self.searchmenu = tk.OptionMenu(self.searchFrame, self.searchStr, 'Search by RA', "Search by last name", "Search by model", "Search by manufacturer", "Search by status")
 		self.searchenter = tk.Entry(self.searchFrame)
-		self.searchbutton = tk.Button(self.searchFrame, text="Search") # command = self.searching
+		self.searchbutton = tk.Button(self.searchFrame, text="Search", command=self.searchRepairs) # command = self.searching
 		self.refresh = tk.Button(self.searchFrame, text="Refresh") # command = self.getRepairs
 
 		i = 0
-		self.searchenter.grid(row=0, column= i)
-		self.searchmenu.grid(row=0, column= i + 1)
-		self.searchbutton.grid(row=0, column= i + 2)
-		self.refresh.grid(row=0, column= i + 3)
+		self.searchenter.grid(row=0, column= i + 1)
+		self.searchmenu.grid(row=0, column= i + 2)
+		self.searchbutton.grid(row=0, column= i + 3)
+		self.refresh.grid(row=0, column= i)
+
+	def searchRepairs(self):
+		# redo this function
+		# also what to do to get back to showing all? Refresh button or blank search space?
+		db_connection = mysql.connect(
+			host=self.dbinfo['host'], 
+			database=self.dbinfo['database'], 
+			user=self.dbinfo['user'], 
+			password=self.dbinfo['password'])
+
+		query = "select * from repairconsole where "
+		option = self.searchStr.get()
+		searchString = ""
+		if option == "Search by RA": searchString = "repairnumber = " + self.searchenter.get()
+		if option == "Search by last name": searchString = "lastname = \'%s\'" % (self.searchenter.get())
+		elif option == "Search by model": searchString = "model = \'%s\'" % (self.searchenter.get())
+		elif option == "Search by manufacturer": searchString = "manufacturer = \'%s\'" % (self.searchenter.get())
+		elif option == "Search by statusof": searchString = "status = \'%s\'" % (self.searchenter.get())
+		
+		cursor = db_connection.cursor(dictionary=True)
+		cursor.execute(query + searchString)
+		entries = cursor.fetchall()
+		self.data = {}
+		for i in range(len(entries)):
+			self.data[i] = entries[i]
+			if isinstance(entries[i]['daterecieved'], datetime.date):
+				self.data[i]['daterecieved'] = str(entries[i]['daterecieved'])
+			if isinstance(entries[i]['last updated'], datetime.date):
+				self.data[i]['last updated'] = str(entries[i]['last updated'])
+		cursor.close()
+		db_connection.close()
+
+		# need to  see if will redo the whole thing without deleting all rows
+		# or keep adding info to the model with each search
+		self.model.deleteRows()
+		self.model.importDict(self.data)
+		# print(self.model)
+		self.repairTable.redraw()
+
 
 	def getRepairs(self):
 		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])

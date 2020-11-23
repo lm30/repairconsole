@@ -1,9 +1,13 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
+from tkinter import scrolledtext
 
+import datetime
 from tkintertable import TableCanvas, TableModel
 import mysql.connector as mysql
+
+from repairTableGUI import RepairTableGUI
 
 class RepairGUI(object):
 	def __init__(self, root=None, **kwargs):
@@ -13,13 +17,19 @@ class RepairGUI(object):
 		self.root.title(self.title)
 		self.root.protocol("WM_DELETE_WINDOW", self.closeGUI)
 
+		# make the window full screen width and half the height
+		width = self.root.winfo_screenwidth()
+		height = self.root.winfo_screenheight()
+		self.root.geometry(f'{width}x{height}')
+
+		# setting the frame as pack
 		frame = tk.Frame(self.root, **kwargs)
 		frame.pack()
+
+		# create the widgets
 		self.create_widgets()
 
-		self.label = tk.Label(frame, text=self.title)
-		self.label.pack(padx=10, pady=10)
-
+		# add item button is place at the bottom -- change this later
 		button_bonus = tk.Button(self.root, text="Add item", command=self.createAddWidget)
 		button_bonus.pack(fill='x')
 
@@ -27,48 +37,15 @@ class RepairGUI(object):
 		self.createRepairTable()
 
 	def createRepairTable(self):
-		HOST = "108.167.140.132"
-		DATABASE = 'zephyr44_repair'
-		USER = 'zephyr44_testus'
-		PASSWORD = 'password'
-		db_connection = mysql.connect(host=HOST, database=DATABASE, user=USER, password=PASSWORD)
+		dbinfo = {
+		'host' : "108.167.140.132",
+		'database' : 'zephyr44_repair',
+		'user' : 'zephyr44_testus',
+		'password' : 'password'
+		}
 
-		cursor = db_connection.cursor(dictionary=True)
-		# add last date modified by too and daterecieved
-		cursor.execute("select repairnumber, lastname, repairedby, status, typeof from repairconsole")
-		entries = cursor.fetchall()
-		print(entries)
-
-		data = {i: entries[i] for i in range(len(entries))}
-		print(data)
-		# data = {0: {'repairnumber': 50000, 'lastname': 'doe', 'daterecieved': datetime.date(2020, 11, 16), 'repairedby': 'Pam', 'status': 'received', 'typeof': 'cassette player'}, 1: {'repairnumber': 50002, 'lastname': 'doe', 'daterecieved': datetime.date(2020, 10, 29), 'repairedby': 'Pam', 'status': 'inspected', 'typeof': 'amplifier'}}
-
-		# colNames = cursor.column_names
-		# print(colNames)
-
-		# # repair frame is packed but it has grid style inside it
-		# repairFrame = Frame(self.root)
-		# repairFrame.pack(side=TOP, padx=0, pady=0)
-		# for i in range(len(colNames)):
-		# 	self.e = Entry(repairFrame, width=15, bg="red", fg='blue', font=('Arial', 16, 'bold'))
-		# 	self.e.insert(END, colNames[i])
-		# 	self.e.grid(row=0, column=i)
-		# for i in range(len(entries)):
-		# 	for j in range(len(entries[i])):
-		# 		self.e = Entry(repairFrame, width=15, fg="black", font=('Arial', 12, 'bold'))
-		# 		self.e.insert(END, entries[i][j])
-		# 		self.e.grid(row=i + 1, column=j) # row + 1 to account for the column names
-
-
-		# Tkintertable attempt
-		repairFrame = Frame(self.root)
-		repairFrame.pack(side=TOP)
-
-		model = TableModel()
-		model.importDict(data)
-		table = TableCanvas(repairFrame, model=model, cellwidth=20, cellbackgr='#e3f698', thefont=('Arial', 12), rowheight=30, rowheaderwidth=50, rowselectedcolor='yellow', editable=False, read_only=True)
-		table.createTableFrame()
-		table.show()
+		self.repTable = RepairTableGUI(self.root, dbinfo=dbinfo)
+		self.repTable.createRepairWidget()
 
 	def closeGUI(self):
 		# upon clicking the red "X" to close the application
