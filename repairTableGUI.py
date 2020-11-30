@@ -9,6 +9,23 @@ class RepairTableGUI(object):
 		self.root = root
 		self.dbinfo = kwargs.pop('dbinfo')
 
+		# # put this into an easily editable file later
+		# self.columnInfo = {
+		# 	"repairnumber": "Repair number",
+		# 	"firstname": "First name",
+		# 	"lastname": "Last name",
+		# 	"email": "Email",
+		# 	"phone": "Phone number",
+		# 	"daterecieved": "Date recieved",
+		# 	"lastupdated": "Last updated",
+		# 	"repairedby": "Repaired by",
+		# 	"comments": "Comments",
+		# 	"typeof": "Type of",
+		# 	"manufacturer": "Manufacturer",
+		# 	"model": "Model",
+		# 	"status": "Status"
+		# }
+
 	def createRepairWidget(self):
 		self.createSearchWidget()
 		self.createTableWidget()
@@ -22,7 +39,7 @@ class RepairTableGUI(object):
 		self.model = TableModel()
 		self.model.importDict(self.data)
 		self.repairTable = TableCanvas(self.repairFrame, model=self.model, cellwidth=30, cellbackgr='#e3f698', thefont=('Arial', 12), rowheight=50, rowheaderwidth=50, rowselectedcolor='yellow', editable=False, read_only=True)
-		self.repairTable.sortTable(columnName="repairnumber")
+		# self.repairTable.sortTable(columnName="repairnumber")
 		self.repairTable.grid(row=50, stick=S)
 
 		self.repairTable.createTableFrame()
@@ -75,8 +92,8 @@ class RepairTableGUI(object):
 			self.data[i] = entries[i]
 			if isinstance(entries[i]['daterecieved'], datetime.date):
 				self.data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			if isinstance(entries[i]['last updated'], datetime.date):
-				self.data[i]['last updated'] = str(entries[i]['last updated'])
+			if isinstance(entries[i]['lastupdated'], datetime.date):
+				self.data[i]['lastupdated'] = str(entries[i]['lastupdated'])
 		cursor.close()
 		db_connection.close()
 
@@ -105,8 +122,8 @@ class RepairTableGUI(object):
 			self.data[i] = entries[i]
 			if isinstance(entries[i]['daterecieved'], datetime.date):
 				self.data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			if isinstance(entries[i]['last updated'], datetime.date):
-				self.data[i]['last updated'] = str(entries[i]['last updated'])
+			if isinstance(entries[i]['lastupdated'], datetime.date):
+				self.data[i]['lastupdated'] = str(entries[i]['lastupdated'])
 
 		cursor.close()
 		db_connection.close()
@@ -165,44 +182,56 @@ class RepairTableGUI(object):
 
 		# update the db:
 		updated = self.findUpdatedFields(recordKey, fields)
-		if updated: # if it isn't empty
-		# change self.data and the canvas and update the db
+		if updated:
+			# change self.data and the canvas and update the db
 			for key in updated:
 				self.data[recordKey][key] = updated[key]
 
-			# REDO I don't like this because it means that the updated row changes, 
-			# it shows up at the bottom of the table
-			# will need to get the row and column and change that later
-			self.model.deleteRow(key=recordKey)
-			self.model.addRow(key=recordKey, **self.data[recordKey])
+			# edit the table for the user
+			self.editRow(recordKey, self.data[recordKey])
 			self.repairTable.redraw()
 
-			query = "update repairconsole set "
+			query = self.createUpdateQuery(updated, recordKey)
+			print(query)
 
+			# update and commit to the databse
+			# will autocommit to the database
+			# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
+			
+			# for testing purposes, keep this uncommented
 			db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+
 			cursor = db_connection.cursor()
 			cursor.execute(query)
 			cursor.close()
 			db_connection.close()
 
+	def editRow(self, recordKey, updatedFields):
+		for key in updatedFields:
+			col = self.model.getColumnIndex(key)
+			self.model.setValueAt(updatedFields[key], recordKey, col)
+
+	def createUpdateQuery(self, updatedRows, recordKey):
+		query = "update repairconsole set "
+
+		for key in updatedRows:
+			query += "`" + key + "` = \'%s\'" % (updatedRows[key]) + ","
+		query = query[:len(query) - 1] + " where repairnumber = " + str(self.data[recordKey]['repairnumber'])
+		return query
+
 	def findUpdatedFields(self, recordKey, fields):
+		## DO NOT ALLOW CHANGES TO THE RA NUMBER. THIS IS A PART THAT WILL NEVER CHANGE FOR A ROW
 		updatedDict = {}
 		for key in fields:
 			if key == 'comments':
-				if fields[key].get("1.0", "end-1c") != self.data[recordKey][key]:
-					newComment = fields[key].get("1.0", "end-1c")
-					oldComment = self.data[recordKey][key]
-					if len(newComment) > len(oldComment):
-						today = datetime.datetime.today().strftime('%Y-%m-%d')
-						if newComment[len(oldComment)] == "\n":
-							newComment = today + " " +  newComment[len(oldComment) + 1: ]
-						else:
-							newComment = today + " " + newComment[len(oldComment):]
-					updatedDict[key] = oldComment + "\n" + newComment
-			elif key == "daterecieved" or key == "last updated":
-				if fields[key].get() != self.data[recordKey][key]:
-					date = self.validateDate(fields[key].get())
-					if date: updatedDict[key] = date
+				comments = fields[key].get("1.0", "end-1c")
+				if comments and comments != self.data[recordKey][key]:
+					# change the comment in the field itself when saving
+					comment = self.addComment(recordKey, comments)
+					updatedDict[key] = comment
+			elif key == "daterecieved" or key == "lastupdated":
+				if fields[key].get() != self.data[recordKey][key] and self.isValidDate(fields[key].get()):
+					updatedDict[key] = fields[key].get()
 			elif key == "repairnumber" and (int(fields[key].get()) != self.data[recordKey][key]):
 				updatedDict[key] = int(fields[key].get())
 			elif key != "repairnumber" and fields[key].get() != self.data[recordKey][key]:
@@ -210,13 +239,34 @@ class RepairTableGUI(object):
 
 		return updatedDict
 
+	def addComment(self, recordKey, comment):
+		newComment = comment
+		oldComment = self.data[recordKey]["comments"]
+
+		# TODO: fix so user can modify previous comments AND add a new comment for that day
+		# without using separate saves
+		today = datetime.datetime.today().strftime('%Y-%m-%d')
+		if not oldComment and newComment: # previously empty space and add new comment
+			return today + ": " + newComment + "\n"
+		elif (newComment and oldComment) and len(newComment) > len(oldComment):
+			if newComment[:len(oldComment)] != oldComment:
+				# if the user modified the comment for previous days
+				return newComment + "\n"
+			if newComment != oldComment:
+				addedSegment = newComment[len(oldComment):]
+				return oldComment + today + ": " + addedSegment + "\n"
+
 	# need a better name
-	def validateDate(self, date_text):
+	def isValidDate(self, date_text):
 		try:
-			return datetime.datetime.strptime(date_text, '%Y-%m-%d')
+			datetime.datetime.strptime(date_text, '%Y-%m-%d')
+			if len(date_text) != 10:
+				messagebox.showerror("Incorrect date format", "Incorrect date format, should be YYYY-MM-DD")
+				return False
+			return True
 		except ValueError:
 			messagebox.showerror("Incorrect date format", "Incorrect date format, should be YYYY-MM-DD")
-			return ""
+			return False
 
 	def clicked(self, event):
 		try:
