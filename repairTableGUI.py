@@ -128,72 +128,173 @@ class RepairTableGUI(object):
 		cursor.close()
 		db_connection.close()
 
+	def addItemWidget(self):
+		window = tk.Toplevel()
+		window.title("Add entry")
+		window.resizable(False, False)
+
+		# redo this whole part. see todo list for details on how should do it
+		fields = {
+					"repairnumber": "", 
+					"firstname":"",
+					"lastname":"",
+					"email":"",
+					"phone":"",
+					"daterecieved":"",
+					"repairedby":"",
+					"comments":"",
+					"typeof":"",
+					"manufacturer":"",
+					"model":"",
+					"status":"",
+		}
+		fields, rows = self.createWidgetFields(window, fields)
+
+		tk.Button(window, text="save", command= lambda arg1=fields, arg2=window : self.addItem(fields, window)).grid(columnspan=4, sticky="nsew")
+
+		window.bind("<Escape>", lambda e: window.destroy())
+		window.protocol("WM_DELETE_WINDOW", window.destroy)
+
+	def addItem(self, fields, window):
+		# redo this whole function.
+		addedItems = {}
+		for item in fields:
+			if isinstance(fields[item], scrolledtext.ScrolledText): 
+				addedItems[item] = self.addComment(None, fields[item].get("1.0", "end-1c"))
+			else:
+				if item == "repairnumber" and not fields[item].get():
+					messagebox.showerror("Unable to add item", "Repair number cannot be left blank")
+					return
+				elif item == "repairnumber" and fields[item].get().isdigit() == False:
+					messagebox.showerror("Unable to add item", "Repair number must be a whole number")
+					return
+				elif item == "daterecieved":
+					today = datetime.datetime.today().strftime('%Y-%m-%d')
+					addedItems[item] = today
+					if fields[item].get():
+						date = fields[item].get()
+						if not self.isValidDate(date):
+							return
+						addedItems[item] = date
+					addedItems["lastupdated"] = today
+				else:
+					addedItems[item] = fields[item].get()
+
+		# add row in the table
+		key = self.model.addRow(**addedItems)
+		self.repairTable.redraw()
+
+		query, valuesList = self.createAddQuery(addedItems)
+		# update and commit to the databse
+		# will autocommit to the database
+		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
+		
+		# for testing purposes, keep this uncommented
+		# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+		
+		cursor = db_connection.cursor()
+		cursor.execute(query, valuesList)
+		cursor.close()
+		db_connection.close()
+
+		window.destroy()
 
 	def createModifyWidget(self, recordKey, recordToMod):
 		window = tk.Toplevel()
 		windowTitle = "Repair Number: " + str(recordToMod['repairnumber'])
+		window.resizable(False, False)
 		window.title(windowTitle)
 
-		i = 1
-		j = 0
-		modifyFields = {}
-		for key in recordToMod.keys():
-			tk.Label(window, text=key, font="Arial 16 bold").grid(row=i, column=j, sticky=W)
-			if key == "comments":
-				textfield = scrolledtext.ScrolledText(window, wrap=tk.WORD, width=40, height=10)
-				textfield.grid(row=i, column=j + 1)
-				modifyFields[key] = textfield
-				if recordToMod[key]: textfield.insert(INSERT, recordToMod[key]) 
-				j += 2
-				i = 0
-			elif key == "status":
-				statusStr = tk.StringVar(window)
-				statusStr.set(recordToMod[key])
-				statusMenu = tk.OptionMenu(window, statusStr, "received", "inspected", "in progress", "finished", "shipped" )
-				statusMenu.grid(row=i, column=j +1, sticky="nsew")
-				modifyFields[key] = statusStr
-			elif key == "typeof":
-				typeStr = tk.StringVar(window)
-				typeStr.set(recordToMod[key])
-				typeMenu = tk.OptionMenu(window, typeStr, "amplifier", "amplified speaker", "cassette player", "cartridge", "cd player","compact system", "preamp", "receiver", "reel to reel", "turntable", "tuner", "voltage conversion", "other")
-				typeMenu.grid(row=i, column=j + 1, sticky="nsew")
-				modifyFields[key] = typeStr
-			else:
-				stringVar = tk.StringVar(window)
-				stringVar.set(recordToMod[key])
-				entry = tk.Entry(window, textvariable=stringVar)
-				# modifyFields[key] = entry
-				# if recordToMod[key]:
-				# 	entry.insert(0, recordToMod[key])
-				entry.grid(row=i, column=j + 1)
-				modifyFields[key] = stringVar
-			i += 1
+		modifyFields, maxRow = self.createWidgetFields(window, recordToMod)
 
 		# change the column and column span so don't have to manually change if more cols appear than 4
-		tk.Button(window, text="save", bg='black', command= lambda arg1=recordKey, arg2=modifyFields : self.save_modifications(arg1, arg2)).grid(columnspan=4, sticky=S+E+W)
-
+		# why are the buttons not changing colors?
+		tk.Button(window, text="delete", bg='#8eeda8', command= lambda arg1=recordKey, arg2=window: self.deleteRow(arg1, arg2)).grid(row=maxRow + 1, column=0, columnspan=2, sticky=N+S+W+E)
+		tk.Button(window, text="save", bg='black', command= lambda arg1=recordKey, arg2=modifyFields : self.saveModifications(arg1, arg2)).grid(row=maxRow + 1, column=2, columnspan=2, sticky=N+S+E+W)
 
 		# makes sure destroys self when click the "X" to close
 		window.bind('<Escape>', lambda e: window.destroy())
 		window.protocol("WM_DELETE_WINDOW", window.destroy)
 
-	# { recordkey : record at that key regardless of whether is same }
-	def save_modifications(self, recordKey, fields):
+	# finish editing this so can reuse for add widget
+	def createWidgetFields(self, window, recordToMod):
+		i = 1
+		j = 0
+		maxRow = i
+		modifyFields = {}
+		# simplify this later
+		for key in recordToMod.keys():
+			tk.Label(window, text=key, font="Arial 16 bold").grid(row=i, column=j, sticky=W)
+			field = None
+			entry = None
+			if key == "comments":
+				field = scrolledtext.ScrolledText(window, wrap=tk.WORD, width=40, height=10)
+				field.grid(row=i, column=j + 1, sticky="nsew")
+				if recordToMod[key]: field.insert(INSERT, recordToMod[key]) 
+				j += 2
+				i = 0
+			elif key == "status":
+				field = tk.StringVar(window)
+				options = ["received", "inspected", "in progress", "finished", "shipped" ]
+				if not recordToMod[key]: field.set(options[0])
+				else: field.set(recordToMod[key])
+				entry = tk.OptionMenu(window, field, *options)
+			elif key == "typeof":
+				field = tk.StringVar(window)
+				options = ["amplifier", "amplified speaker", "cassette player", "cartridge", "cd player","compact system", "preamp", "receiver", "reel to reel", "turntable", "tuner", "voltage conversion", "other"]
+				if not recordToMod[key]: field.set(options[0])
+				else: field.set(recordToMod[key])
+				entry = tk.OptionMenu(window, field, *options)
+			# elif key == "repairnumber":
+				# tk.Label(window, text=recordToMod[key], font="Arial 16 bold").grid(row=i, column=j + 1, sticky="nsew")
+			else:
+				field = tk.StringVar(window)
+				field.set(recordToMod[key])
+				entry = tk.Entry(window, textvariable=field)
+			modifyFields[key] = field
+			if entry: entry.grid(row=i, column=j + 1, sticky="nsew")
+			i += 1
+			maxRow = max(maxRow, i)
 
-		# update the db:
+		return modifyFields, maxRow
+
+	def deleteRow(self, rowNumber, window):
+		# remove entry from the table, and db then close the window
+		raNumber = self.model.getData()[rowNumber]["repairnumber"]
+		del self.model.data[rowNumber]
+		self.model.reclist.remove(rowNumber)
+		self.repairTable.redraw()
+
+		query = "delete from repairconsole where repairnumber=" + str(raNumber)
+		# update and commit to the databse
+		# will autocommit to the database
+		# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
+			
+		# for testing purposes, keep this uncommented
+		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+
+		cursor = db_connection.cursor()
+		cursor.execute(query)
+		cursor.close()
+		db_connection.close()
+
+		window.destroy()
+
+	# { recordkey : record at that key regardless of whether is same }
+	def saveModifications(self, recordKey, fields):
 		updated = self.findUpdatedFields(recordKey, fields)
 		if updated:
 			# change self.data and the canvas and update the db
 			for key in updated:
-				self.data[recordKey][key] = updated[key]
+				# self.data[recordKey][key] = updated[key]
+				self.insertText(fields[key], updated[key])
 
 			# edit the table for the user
-			self.editRow(recordKey, self.data[recordKey])
+			# self.editRow(recordKey, self.data[recordKey])
+			self.editRow(recordKey, updated)
 			self.repairTable.redraw()
 
 			query = self.createUpdateQuery(updated, recordKey)
-			print(query)
-
 			# update and commit to the databse
 			# will autocommit to the database
 			# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
@@ -206,42 +307,73 @@ class RepairTableGUI(object):
 			cursor.close()
 			db_connection.close()
 
+	def insertText(self, textfield, text):
+		if isinstance(textfield, tk.StringVar):
+			textfield.set(text)
+		else:
+			textfield.delete("1.0", END)
+			textfield.insert("1.0", text)
+
 	def editRow(self, recordKey, updatedFields):
 		for key in updatedFields:
-			col = self.model.getColumnIndex(key)
-			self.model.setValueAt(updatedFields[key], recordKey, col)
+			self.model.data[recordKey][key] = updatedFields[key]
 
 	def createUpdateQuery(self, updatedRows, recordKey):
 		query = "update repairconsole set "
 
 		for key in updatedRows:
 			query += "`" + key + "` = \'%s\'" % (updatedRows[key]) + ","
-		query = query[:len(query) - 1] + " where repairnumber = " + str(self.data[recordKey]['repairnumber'])
+		# query = query[:len(query) - 1] + " where repairnumber = " + str(self.data[recordKey]['repairnumber'])
+		query = query[:len(query) - 1] + " where repairnumber = " + str(self.model.getData()[recordKey]['repairnumber'])
 		return query
+
+	def createAddQuery(self, addedColumns):
+		# since addedColumns is a dictionary, and order isn't necessarily preserved here
+		# need to return the tuple for the values too
+		query = "insert into repairconsole "
+		fields = "("
+		values = "VALUES (" + (", %s" * len(addedColumns))[2:] + ")"
+
+		valuesList = []
+		for item in addedColumns:
+			fields += item + ", "
+			valuesList.append(addedColumns[item])
+		query += fields[:-2] + ") " + values
+
+		return query, tuple(valuesList)
 
 	def findUpdatedFields(self, recordKey, fields):
 		## DO NOT ALLOW CHANGES TO THE RA NUMBER. THIS IS A PART THAT WILL NEVER CHANGE FOR A ROW
 		updatedDict = {}
 		for key in fields:
+			# change to check if is instance of scrolled text THEN if is comments key
 			if key == 'comments':
 				comments = fields[key].get("1.0", "end-1c")
-				if comments and comments != self.data[recordKey][key]:
+				# if comments and comments != self.data[recordKey][key]:
+				if comments and comments != self.model.getData()[recordKey][key]:
 					# change the comment in the field itself when saving
 					comment = self.addComment(recordKey, comments)
 					updatedDict[key] = comment
 			elif key == "daterecieved" or key == "lastupdated":
-				if fields[key].get() != self.data[recordKey][key] and self.isValidDate(fields[key].get()):
+				# if fields[key].get() != self.data[recordKey][key] and self.isValidDate(fields[key].get()):
+				if fields[key].get() != self.model.getData()[recordKey][key] and self.isValidDate(fields[key].get()):
 					updatedDict[key] = fields[key].get()
-			elif key == "repairnumber" and (int(fields[key].get()) != self.data[recordKey][key]):
+			# elif key == "repairnumber" and (int(fields[key].get()) != self.data[recordKey][key]):
+			elif key == "repairnumber" and (int(fields[key].get()) != self.model.getData()[recordKey][key]):
 				updatedDict[key] = int(fields[key].get())
-			elif key != "repairnumber" and fields[key].get() != self.data[recordKey][key]:
+			# elif key != "repairnumber" and fields[key].get() != self.data[recordKey][key]:
+			elif key != "repairnumber" and fields[key].get() != self.model.getData()[recordKey][key]:
 				updatedDict[key] = fields[key].get()
 
 		return updatedDict
 
 	def addComment(self, recordKey, comment):
 		newComment = comment
-		oldComment = self.data[recordKey]["comments"]
+		if not recordKey: 
+			oldComment = None
+		else:
+			# oldComment = self.data[recordKey]["comments"]
+			oldComment = self.model.getData()[recordKey]["comments"]
 
 		# TODO: fix so user can modify previous comments AND add a new comment for that day
 		# without using separate saves
@@ -255,6 +387,8 @@ class RepairTableGUI(object):
 			if newComment != oldComment:
 				addedSegment = newComment[len(oldComment):]
 				return oldComment + today + ": " + addedSegment + "\n"
+		else:
+			return ""
 
 	# need a better name
 	def isValidDate(self, date_text):
@@ -277,7 +411,7 @@ class RepairTableGUI(object):
 			print("error")
 		if clicks:
 			# try: 
-			print("entire record: ", self.repairTable.model.getRecordAtRow(clicks[0]))
+			# print("entire record: ", self.repairTable.model.getRecordAtRow(clicks[0]))
 			recKey = self.repairTable.model.getRecName(clicks[0])
 			self.createModifyWidget(recKey ,self.repairTable.model.getRecordAtRow(clicks[0]))
 				# print(clicks[0])

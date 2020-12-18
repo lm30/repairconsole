@@ -30,7 +30,7 @@ class RepairGUI(object):
 		self.create_widgets()
 
 		# add item button is place at the bottom -- change this later
-		button_bonus = tk.Button(self.root, text="Add item", command=self.createAddWidget)
+		button_bonus = tk.Button(self.root, text="Add item", command=self.repTable.addItemWidget)
 		button_bonus.pack(fill='x')
 
 	def create_widgets(self):
@@ -52,20 +52,6 @@ class RepairGUI(object):
 		if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
 			self.root.destroy()
 		# self.master.destroy
-
-	def createAddWidget(self):
-		# change this to easily add entry to the database
-		window = tk.Toplevel()
-		window.title("Add entry")
-
-		label = tk.Label(window, text="Under construction")
-		label.pack(fill='x', padx=50, pady=5)
-
-		# the escape button and clicking the close button will close the widget
-		window.bind('<Escape>', lambda e: window.destroy())
-		button_close = tk.Button(window, text="close", command=window.destroy)
-		button_close.pack(fill='x')
-
 
 def main():
 	root = tk.Tk()
