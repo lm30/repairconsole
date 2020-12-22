@@ -57,7 +57,7 @@ class AddItemWindow(EditWidget):
 						addedItems[item] = date
 					addedItems["lastupdated"] = today
 				else:
-					addedItems[item] = fields[item].get()
+					addedItems[item] = fields[item].get().capitalize()
 
 		# add row in the table
 		key = self.model.addRow(**addedItems)

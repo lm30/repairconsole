@@ -17,41 +17,42 @@ class RepairGUI(object):
 		self.root.title(self.title)
 		self.root.protocol("WM_DELETE_WINDOW", self.closeGUI)
 
+		self.dbinfo = {}
+		self.setup()
+
+	def setup(self):
 		# make the window full screen width and half the height
 		width = self.root.winfo_screenwidth()
 		height = self.root.winfo_screenheight()
 		self.root.geometry(f'{width}x{height}')
 
 		# setting the frame as pack
-		frame = tk.Frame(self.root, **kwargs)
+		frame = tk.Frame(self.root)
 		frame.pack()
 
-		# create the widgets
-		self.create_widgets()
-
-		# add item button is place at the bottom -- change this later
-		button_bonus = tk.Button(self.root, text="Add item", command=self.repTable.addItemWidget)
-		button_bonus.pack(fill='x')
-
-	def create_widgets(self):
+		self.readDBFile()
 		self.createRepairTable()
 
-	def createRepairTable(self):
-		dbinfo = {
-		'host' : "108.167.140.132",
-		'database' : 'zephyr44_repair',
-		'user' : 'zephyr44_testus',
-		'password' : 'password'
-		}
+		addItemBtn = tk.Button(self.root, text="Add item", command=self.repTable.addItemWidget)
+		addItemBtn.pack(fill=tk.BOTH,side=tk.RIGHT, expand=True)
 
-		self.repTable = RepairTableGUI(self.root, dbinfo=dbinfo)
+		buttonOverdue = self.repTable.createOverdueButton(self.root)
+		buttonOverdue.pack(fill=tk.BOTH,side=tk.LEFT, expand=True)
+
+	def readDBFile(self):
+		with open("dbInfoFile.txt", "r") as datafile:
+			for line in datafile:
+				lineList = line.split(" ")
+				self.dbinfo[lineList[0]] = lineList[-1]
+
+	def createRepairTable(self):
+		self.repTable = RepairTableGUI(self.root, dbinfo=self.dbinfo)
 		self.repTable.createRepairWidget()
 
 	def closeGUI(self):
 		# upon clicking the red "X" to close the application
-		if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
-			self.root.destroy()
-		# self.master.destroy
+		# if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
+		self.root.destroy()
 
 def main():
 	root = tk.Tk()

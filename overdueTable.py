@@ -19,7 +19,7 @@ class OverdueTable(object):
 		self.setupTableSchedule()
 
 	def setupTableSchedule(self):
-		# 60 sec * 60 min * 24 hours 
+		# 60 sec * 60 min * 24 hours = 86400 seconds / day
 		self.repeatingTimer = RepeatedTimer(30, self.updateOverdueEntries)
 
 	def stopSchedule(self):
