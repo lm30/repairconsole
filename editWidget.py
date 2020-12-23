@@ -3,6 +3,8 @@ import tkinter as tk
 import datetime
 import mysql.connector as mysql
 
+from columnName import ColumnName
+
 class EditWidget(object):
 	def __init__(self, root=None, **kwargs):
 		self.root = root
@@ -23,25 +25,25 @@ class EditWidget(object):
 			tk.Label(window, text=key, font="Arial 16 bold").grid(row=i, column=j, sticky=W)
 			field = None
 			entry = None
-			if key == "comments":
+			if key == ColumnName["comments"].value:
 				field = scrolledtext.ScrolledText(window, wrap=tk.WORD, width=40, height=10)
 				field.grid(row=i, column=j + 1, sticky="nsew")
 				if recordToMod[key]: field.insert(INSERT, recordToMod[key]) 
 				j += 2
 				i = 0
-			elif key == "status":
+			elif key == ColumnName["status"].value:
 				field = tk.StringVar(window)
 				options = ["received", "inspected", "in progress", "finished", "shipped" ]
 				if not recordToMod[key]: field.set(options[0])
 				else: field.set(recordToMod[key])
 				entry = tk.OptionMenu(window, field, *options)
-			elif key == "typeof":
+			elif key == ColumnName["typeof"].value:
 				field = tk.StringVar(window)
 				options = ["amplifier", "amplified speaker", "cassette player", "cartridge", "cd player","compact system", "preamp", "receiver", "reel to reel", "turntable", "tuner", "voltage conversion", "other"]
 				if not recordToMod[key]: field.set(options[0])
 				else: field.set(recordToMod[key])
 				entry = tk.OptionMenu(window, field, *options)
-			elif key == "repairnumber" and recordToMod[key]:
+			elif key == ColumnName["repairnumber"].value and recordToMod[key]:
 				field = tk.StringVar(window)
 				field.set(recordToMod[key])
 				entry = Entry(window, textvariable=field, state='disabled')
@@ -90,7 +92,7 @@ class EditWidget(object):
 		if not recordKey: 
 			oldComment = None
 		else:
-			oldComment = self.model.getData()[recordKey]["comments"]
+			oldComment = self.model.getData()[recordKey][ColumnName["comments"].value]
 
 		# TODO: fix so user can modify previous comments AND add a new comment for that day
 		# without using separate saves

@@ -4,12 +4,14 @@ import datetime
 import mysql.connector as mysql
 
 from editWidget import EditWidget
+from columnName import ColumnName
 
 class ModifyWindow(EditWidget):
 
 	def createWidget(self, recordKey, recordToMod):
 		window = tk.Toplevel()
-		windowTitle = "Repair Number: " + str(recordToMod['repairnumber'])
+		windowTitle = "Repair Number: " + str(recordToMod[ColumnName['repairnumber'].value])
+		# windowTitle = "Repair Number: " + str(recordToMod[ColumnName['repairnumber'].value])
 		window.resizable(False, False)
 		window.title(windowTitle)
 
@@ -26,11 +28,11 @@ class ModifyWindow(EditWidget):
 
 	def deleteRow(self, rowNumber, window):
 		# remove entry from the table, and db then close the window
-		raNumber = self.model.getData()[rowNumber]["repairnumber"]
+		raNumber = self.model.getData()[rowNumber][ColumnName["repairnumber"].value]
 		del self.model.data[rowNumber]
 		self.model.reclist.remove(rowNumber)
 		self.table.redraw()
-		self.table.sortTable(columnName="repairnumber")
+		self.table.sortTable(columnName=ColumnName['repairnumber'].value)
 
 		query = "delete from repairconsole where repairnumber=" + str(raNumber)
 		self.updateDatabase(query)
@@ -48,9 +50,10 @@ class ModifyWindow(EditWidget):
 			# edit the table for the user
 			self.editRow(recordKey, updated)
 			self.table.redraw()
-			self.table.sortTable(columnName="repairnumber")
+			self.table.sortTable(columnName=ColumnName['repairnumber'].value)
 
 			query = self.createUpdateQuery(updated, recordKey)
+			# print(query)
 			self.updateDatabase(query)
 
 	def insertText(self, textfield, text):
@@ -68,8 +71,8 @@ class ModifyWindow(EditWidget):
 		query = "update repairconsole set "
 
 		for key in updatedRows:
-			query += "`" + key + "` = \'%s\'" % (updatedRows[key]) + ","
-		query = query[:len(query) - 1] + " where repairnumber = " + str(self.model.getData()[recordKey]['repairnumber'])
+			query += "`" + ColumnName(key).name + "` = \'%s\'" % (updatedRows[key]) + ","
+		query = query[:len(query) - 1] + " where repairnumber = " + str(self.model.getData()[recordKey][ColumnName['repairnumber'].value])
 		return query
 
 
@@ -78,18 +81,18 @@ class ModifyWindow(EditWidget):
 		updatedDict = {}
 		for key in fields:
 			# change to check if is instance of scrolled text THEN if is comments key
-			if key == 'comments':
+			if key == ColumnName['comments'].value:
 				comments = fields[key].get("1.0", "end-1c")
 				if comments and comments != self.model.getData()[recordKey][key]:
 					# change the comment in the field itself when saving
 					comment = self.addComment(recordKey, comments)
 					updatedDict[key] = comment
-			elif key == "daterecieved" or key == "lastupdated":
+			elif key == ColumnName['daterecieved'].value or key == ColumnName['lastupdated'].value:
 				if fields[key].get() != self.model.getData()[recordKey][key] and self.isValidDate(fields[key].get()):
 					updatedDict[key] = fields[key].get()
-			elif key == "repairnumber" and (int(fields[key].get()) != self.model.getData()[recordKey][key]):
+			elif key == ColumnName['repairnumber'].value and (int(fields[key].get()) != self.model.getData()[recordKey][key]):
 				updatedDict[key] = int(fields[key].get())
-			elif key != "repairnumber" and fields[key].get() != self.model.getData()[recordKey][key]:
+			elif key != ColumnName['repairnumber'].value and fields[key].get() != self.model.getData()[recordKey][key]:
 				updatedDict[key] = fields[key].get()
 
 		return updatedDict

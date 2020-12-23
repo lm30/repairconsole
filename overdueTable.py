@@ -5,7 +5,7 @@ import datetime
 import mysql.connector as mysql
 
 from threading import Timer
-
+from columnName import ColumnName
 
 class OverdueTable(object):
 	# an instance of this object should run once every day
@@ -75,11 +75,20 @@ class OverdueTable(object):
 		return entries
 
 	def makeTableReadable(self, entry):
+		result = {}
+		for key in entry:
+			if key in ColumnName._member_names_:
+				newColName = ColumnName[key].value
+				result[newColName] = entry[key]
+			else:
+				result[key] = entry[key]
+
+		# convert datetime to string
 		if isinstance(entry['daterecieved'], datetime.date):
-			entry['daterecieved'] = str(entry['daterecieved'])
+			result[ColumnName["daterecieved"].value] = str(result[ColumnName["daterecieved"].value])
 		if isinstance(entry['lastupdated'], datetime.date):
-			entry['lastupdated'] = str(entry['lastupdated'])
-		return entry
+			result[ColumnName["lastupdated"].value] = str(result[ColumnName["lastupdated"].value])
+		return result
 
 	def checkOverdue(self, date):
 		overdueDate = date + datetime.timedelta(days=self.overdue)

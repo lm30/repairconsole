@@ -7,28 +7,13 @@ import mysql.connector as mysql
 from overdueTable import OverdueTable
 from modifyWindow import ModifyWindow
 from addItemWindow import AddItemWindow
+from columnName import ColumnName
+
 
 class RepairTableGUI(object):
 	def __init__(self, root=None, **kwargs):
 		self.root = root
 		self.dbinfo = kwargs.pop('dbinfo')
-
-		# # put this into an easily editable file later
-		# self.columnInfo = {
-		# 	"repairnumber": "Repair number",
-		# 	"firstname": "First name",
-		# 	"lastname": "Last name",
-		# 	"email": "Email",
-		# 	"phone": "Phone number",
-		# 	"daterecieved": "Date recieved",
-		# 	"lastupdated": "Last updated",
-		# 	"repairedby": "Repaired by",
-		# 	"comments": "Comments",
-		# 	"typeof": "Type of",
-		# 	"manufacturer": "Manufacturer",
-		# 	"model": "Model",
-		# 	"status": "Status"
-		# }
 
 	def createRepairWidget(self):
 		self.createSearchWidget()
@@ -45,7 +30,6 @@ class RepairTableGUI(object):
 
 	def createTableWidget(self):
 		self.repairFrame = Frame(self.root)
-		# change to grid?
 		self.repairFrame.pack(side=TOP, fill='both', expand=True)
 
 		self.model = TableModel()
@@ -92,11 +76,12 @@ class RepairTableGUI(object):
 
 		data = {}
 		for i in range(len(entries)):
-			data[i] = entries[i]
-			if isinstance(entries[i]['daterecieved'], datetime.date):
-				data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			if isinstance(entries[i]['lastupdated'], datetime.date):
-				data[i]['lastupdated'] = str(entries[i]['lastupdated'])
+			data[i] = self.changeRowToReadable(entries[i])
+			# data[i] = entries[i]
+			# if isinstance(entries[i]['daterecieved'], datetime.date):
+			# 	data[i]['daterecieved'] = str(entries[i]['daterecieved'])
+			# if isinstance(entries[i]['lastupdated'], datetime.date):
+			# 	data[i]['lastupdated'] = str(entries[i]['lastupdated'])
 
 		self.model.deleteRows()
 		self.model.importDict(data)
@@ -111,30 +96,56 @@ class RepairTableGUI(object):
 
 	def getRepairs(self):
 		entries = self.queryDatabase("select * from repairconsole", useDict=True)
-
 		data = {}
 		for i in range(len(entries)):
-			data[i] = entries[i]
-			if isinstance(entries[i]['daterecieved'], datetime.date):
-				data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			if isinstance(entries[i]['lastupdated'], datetime.date):
-				data[i]['lastupdated'] = str(entries[i]['lastupdated'])
+			data[i] = self.changeRowToReadable(entries[i])
+			# if isinstance(data[i][ColumnName["daterecieved"].value], datetime.date):
+			# 	data[i][ColumnName["daterecieved"].value] = str(data[i][ColumnName["daterecieved"].value])
+			# if isinstance(data[i][ColumnName["lastupdated"].value], datetime.date):
+			# 	data[i][ColumnName["lastupdated"].value] = str(data[i][ColumnName["lastupdated"].value])
+			
+
+			# data[i] = entries[i]
+			# if isinstance(entries[i]['daterecieved'], datetime.date):
+			# 	data[i]['daterecieved'] = str(entries[i]['daterecieved'])
+			# if isinstance(entries[i]['lastupdated'], datetime.date):
+			# 	data[i]['lastupdated'] = str(entries[i]['lastupdated'])
+
+		# print(data)
 
 		self.model.importDict(data)
 
+	def changeRowToReadable(self, entry):
+		result = {}
+		for key in entry:
+			# to change column name to a readable version
+			if key in ColumnName._member_names_: 
+				newColName = ColumnName[key].value
+				result[newColName] = entry[key]
+			else:
+				result[key] = entry[key]
+
+		# to convert datetime to string
+		if isinstance(result[ColumnName['daterecieved'].value], datetime.date):
+			result[ColumnName["daterecieved"].value] = str(result[ColumnName["daterecieved"].value])
+		if isinstance(result[ColumnName['lastupdated'].value], datetime.date):
+			result[ColumnName["lastupdated"].value] = str(result[ColumnName["lastupdated"].value])
+
+		return result
+
 	def sortTable(self):
 		sortOption = self.sortStr.get()
-		column = "repairnumber"
+		column = ColumnName["repairnumber"].value
 		if sortOption == "Sort by last name":
-			column = "lastname"
+			column = ColumnName["lastname"].value
 		elif sortOption == "Sort by date recieved":
-			column = "daterecieved"
+			column = ColumnName["daterecieved"].value
 		elif sortOption == "Sort by last updated":
-			column = "lastupdated"
+			column = ColumnName["lastupdated"].value
 		elif sortOption == "Sort by status":
-			column = "status"
+			column = ColumnName["status"].value
 		elif sortOption == "Sort by type":
-			column = "typeof"
+			column = ColumnName["typeof"].value
 
 		self.repairTable.sortTable(columnName=column)
 
