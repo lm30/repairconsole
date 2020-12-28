@@ -1,0 +1,6 @@
+Subject: Overdue #{repairnumber}
+Hi {name},
+
+Item number {repairnumber} for repair is overdue. It has been last updated on {lastupdated}.
+
+This message is automated and sent from python.

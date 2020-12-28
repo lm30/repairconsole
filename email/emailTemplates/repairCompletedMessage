@@ -1,0 +1,6 @@
+Subject: Finished #{repairnumber}
+Hi {name},
+
+Item number {repairnumber} for repair is now complete. It is ready to ship.
+
+This message is automated and sent from python.

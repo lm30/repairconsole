@@ -38,17 +38,18 @@ class AddItemWindow(EditWidget):
 				elif item == ColumnName["daterecieved"].value:
 					today = datetime.datetime.today().strftime('%Y-%m-%d')
 					addedItems[item] = today
-					# addedItems[ColumnName[item].value] = today
 					if fields[item].get():
 						date = fields[item].get()
 						if not self.isValidDate(date):
 							return
 						addedItems[item] = date
-						# addedItems[ColumnName[item].value] = date
-					addedItems[ColumnName["lastupdated"].value] = today
-				else:
+				elif item != ColumnName['status'].value and item != ColumnName['typeof'].value:
 					addedItems[item] = fields[item].get().capitalize()
-					# addedItems[ColumnName[item].value] = fields[item].get().capitalize()
+				else:
+					addedItems[item] = fields[item].get()
+
+		# change this later to make it check if it has a date at all
+		addedItems[ColumnName["lastupdated"].value] = addedItems[ColumnName["daterecieved"].value]
 
 		# add row in the table
 		key = self.model.addRow(**addedItems)

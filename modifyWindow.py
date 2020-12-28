@@ -95,4 +95,9 @@ class ModifyWindow(EditWidget):
 			elif key != ColumnName['repairnumber'].value and fields[key].get() != self.model.getData()[recordKey][key]:
 				updatedDict[key] = fields[key].get()
 
+		# if updatedDict and not fields[ColumnName['lastupdated'].value].get():
+		# if there are any changes, update the "last updated" field
+		if updatedDict:
+			today = datetime.datetime.today().strftime('%Y-%m-%d')
+			updatedDict[ColumnName["lastupdated"].value] = today
 		return updatedDict

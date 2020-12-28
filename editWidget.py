@@ -52,7 +52,11 @@ class EditWidget(object):
 				field.set(recordToMod[key])
 				entry = tk.Entry(window, textvariable=field)
 			modifyFields[key] = field
-			if entry: entry.grid(row=i, column=j + 1, sticky="nsew")
+			if entry: 
+				entry.grid(row=i, column=j + 1, sticky="nsew")
+				entry.bind("<Tab>", self.focusNextWindow)
+			else:
+				field.bind("<Tab>", self.focusNextWindow)
 			i += 1
 			maxRow = max(maxRow, i)
 
@@ -61,10 +65,10 @@ class EditWidget(object):
 	def updateDatabase(self, query, values=None):
 		# update and commit to the databse
 		# will autocommit to the database
-		# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
+		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
 		
 		# for testing purposes, keep this uncommented
-		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+		# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
 
 		cursor = db_connection.cursor()
 		if values:
@@ -108,3 +112,7 @@ class EditWidget(object):
 				return oldComment + today + ": " + addedSegment + "\n"
 		else:
 			return ""
+
+	def focusNextWindow(self, event):
+		event.widget.tk_focusNext().focus()
+		return ("break")
