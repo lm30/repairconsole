@@ -33,7 +33,7 @@ class RepairTableGUI(object):
 		self.repairFrame.pack(side=TOP, fill='both', expand=True)
 
 		self.model = TableModel()
-		self.repairTable = TableCanvas(self.repairFrame, model=self.model, cellwidth=30, cellbackgr='#e3f698', thefont=('Arial', 12), rowheight=50, rowheaderwidth=50, rowselectedcolor='yellow', editable=False, read_only=True)		
+		self.repairTable = TableCanvas(self.repairFrame, model=self.model, cellwidth=30, cellbackgr='#edfafa', thefont=('Arial', 12), rowheight=50, rowheaderwidth=50, rowselectedcolor='systemTransparent', editable=False, read_only=True)		
 		self.repairTable.grid(row=50, stick=S)
 		
 		self.getRepairs()
@@ -79,6 +79,7 @@ class RepairTableGUI(object):
 			data[i] = self.changeRowToReadable(entries[i])
 		self.model.deleteRows()
 		self.model.importDict(data)
+		# self.model.resetcolors()
 		self.repairTable.redraw()
 		self.sortTable()
 
@@ -94,6 +95,8 @@ class RepairTableGUI(object):
 		for i in range(len(entries)):
 			data[i] = self.changeRowToReadable(entries[i])
 		self.model.importDict(data)
+		self.model.resetcolors()
+		self.colorTable()
 
 	def changeRowToReadable(self, entry):
 		# redo, this is a repeat of the function in overdueTable
@@ -125,6 +128,19 @@ class RepairTableGUI(object):
 			column = ColumnName["typeof"].value
 
 		self.repairTable.sortTable(columnName=column)
+
+	def colorTable(self):
+		for item in self.model.data:
+			# if it is finished
+			if self.model.data[item][ColumnName["status"].value] == "finished":
+				self.colorRow(item, "#869191") # dull blue/grey that needs to be changed
+			# elif OverdueTable.isOverdue(self.model.data[item][ColumnName['lastupdated'].value]):
+			elif OverdueTable.isOverdue(self.model.data[item][ColumnName['daterecieved'].value]):
+				self.colorRow(item, "#7F525D") # dull red that should also be changed
+
+	def colorRow(self, key, color):
+		for col in range(len(self.model.data[key])):
+			self.model.setColorAt(key, col, color)
 
 	def addItemWidget(self):
 		self.addWidget.createWidget()

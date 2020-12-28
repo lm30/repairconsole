@@ -9,10 +9,11 @@ from columnName import ColumnName
 
 class OverdueTable(object):
 	# an instance of this object should run once every day
+	overdue = 50
 	def __init__(self, root=None, **kwargs):
 		self.root = root
 		self.dbinfo = kwargs.pop('dbinfo')
-		self.overdue = 50 # DAYS OVERDUE -- CHANGE LATER
+		# self.overdue = 50 # DAYS OVERDUE -- CHANGE LATER
 
 		self.model = TableModel()
 		self.updateOverdueEntries()
@@ -30,7 +31,7 @@ class OverdueTable(object):
 		window.title("Overdue Table")
 
 		# create table 
-		overdueTable = TableCanvas(window, model=self.model, editable=False, read_only=True)		
+		overdueTable = TableCanvas(window, model=self.model, rowselectedcolor='systemTransparent', editable=False, read_only=True)		
 		overdueTable.grid()
 		overdueTable.createTableFrame()
 		overdueTable.sortTable(columnName='daterecieved')
@@ -50,6 +51,7 @@ class OverdueTable(object):
 		i = 0
 		for entry in entries:
 			if self.checkOverdue(entry['daterecieved']):
+			# if self.checkOverdue(entry['lastupdated']):
 				overdueEntries[i] = self.makeTableReadable(entry)
 				i += 1
 		return overdueEntries
@@ -90,6 +92,7 @@ class OverdueTable(object):
 	def checkOverdue(self, date):
 		overdueDate = date + datetime.timedelta(days=self.overdue)
 		if datetime.datetime.today().date() > overdueDate:
+		# if datetime.datetime.today().date() > self.overdueDate:
 			return True
 		return False
 
@@ -98,12 +101,13 @@ class OverdueTable(object):
 	# 	date = datetime.datetime.today() - datetime.timedelta(days=self.overdue)
 	# 	return date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-	# def isOverdue(self, datestring):
-	# 	date = datetime.datetime.strptime(datestring,'%Y-%m-%d')
-	# 	overdueDate =  date + datetime.timedelta(days=self.overdue)
-	# 	if datetime.datetime.today() > overdueDate:
-	# 		return True
-	# 	return False
+	@classmethod
+	def isOverdue(self, datestring):
+		date = datetime.datetime.strptime(datestring,'%Y-%m-%d')
+		overdueDate =  date + datetime.timedelta(days=self.overdue)
+		if datetime.datetime.today() > overdueDate:
+			return True
+		return False
 
 class RepeatedTimer(object):
 	def __init__(self, interval, function, *args, **kwargs):
