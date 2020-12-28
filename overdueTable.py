@@ -55,7 +55,6 @@ class OverdueTable(object):
 		return overdueEntries
 
 	def getAllEntries(self, useDict=False):
-		# query = "select * from repairconsole"
 		query = "select repairnumber, lastname, daterecieved, lastupdated, status, repairedby, model, manufacturer, email, phone from repairconsole"
 		# below doesn't work even when I use the sql statement directly 
 		# query = "select * from repairconsole where daterecieved > %s"
@@ -79,15 +78,13 @@ class OverdueTable(object):
 		for key in entry:
 			if key in ColumnName._member_names_:
 				newColName = ColumnName[key].value
-				result[newColName] = entry[key]
+				# result[newColName] = entry[key]
+				if ColumnName.isDate(key):
+					result[newColName] = str(entry[key])
+				else:
+					result[newColName] = entry[key]		
 			else:
 				result[key] = entry[key]
-
-		# convert datetime to string
-		if isinstance(entry['daterecieved'], datetime.date):
-			result[ColumnName["daterecieved"].value] = str(result[ColumnName["daterecieved"].value])
-		if isinstance(entry['lastupdated'], datetime.date):
-			result[ColumnName["lastupdated"].value] = str(result[ColumnName["lastupdated"].value])
 		return result
 
 	def checkOverdue(self, date):

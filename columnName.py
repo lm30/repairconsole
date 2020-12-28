@@ -1,4 +1,3 @@
-# from enum import Enum
 import enum
 
 class ColumnNameMeta(enum.EnumMeta):
@@ -25,7 +24,25 @@ class ColumnName(enum.Enum, metaclass=ColumnNameMeta):
 	def has_value(cls, value):
 		return value in cls._value2member_map_
 
+	@classmethod
+	def isDate(cls, key):
+		""" 
+		Returns true if the key exists in the enum and if it is a label for a date
+		"""
+		if key in ColumnName.__members__:
+			if "date" in key:
+				return True
+		return False
 
+
+# print(ColumnName("repairnumber"))
+# print(ColumnName("Repair number"))
+# print(ColumnName.isDate("repairnumber"))
+# print(ColumnName.isDate("Repair Number"))
+# print(ColumnName.isDate("daterecieved"))
+# print(ColumnName.isDate("Date Recieved"))
+# print(ColumnName.isDate("lastupdated"))
+# print(ColumnName.isDate("Last Updated"))
 # print(ColumnName['repairnumber'])
 # print(ColumnName['repairnumber'].name)
 # print(ColumnName['repairnumber'].value)

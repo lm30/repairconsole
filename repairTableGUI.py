@@ -77,12 +77,6 @@ class RepairTableGUI(object):
 		data = {}
 		for i in range(len(entries)):
 			data[i] = self.changeRowToReadable(entries[i])
-			# data[i] = entries[i]
-			# if isinstance(entries[i]['daterecieved'], datetime.date):
-			# 	data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			# if isinstance(entries[i]['lastupdated'], datetime.date):
-			# 	data[i]['lastupdated'] = str(entries[i]['lastupdated'])
-
 		self.model.deleteRows()
 		self.model.importDict(data)
 		self.repairTable.redraw()
@@ -99,38 +93,21 @@ class RepairTableGUI(object):
 		data = {}
 		for i in range(len(entries)):
 			data[i] = self.changeRowToReadable(entries[i])
-			# if isinstance(data[i][ColumnName["daterecieved"].value], datetime.date):
-			# 	data[i][ColumnName["daterecieved"].value] = str(data[i][ColumnName["daterecieved"].value])
-			# if isinstance(data[i][ColumnName["lastupdated"].value], datetime.date):
-			# 	data[i][ColumnName["lastupdated"].value] = str(data[i][ColumnName["lastupdated"].value])
-			
-
-			# data[i] = entries[i]
-			# if isinstance(entries[i]['daterecieved'], datetime.date):
-			# 	data[i]['daterecieved'] = str(entries[i]['daterecieved'])
-			# if isinstance(entries[i]['lastupdated'], datetime.date):
-			# 	data[i]['lastupdated'] = str(entries[i]['lastupdated'])
-
-		# print(data)
-
 		self.model.importDict(data)
 
 	def changeRowToReadable(self, entry):
+		# redo, this is a repeat of the function in overdueTable
 		result = {}
 		for key in entry:
 			# to change column name to a readable version
 			if key in ColumnName._member_names_: 
 				newColName = ColumnName[key].value
-				result[newColName] = entry[key]
+				if ColumnName.isDate(key):
+					result[newColName] = str(entry[key])
+				else:
+					result[newColName] = entry[key]				
 			else:
 				result[key] = entry[key]
-
-		# to convert datetime to string
-		if isinstance(result[ColumnName['daterecieved'].value], datetime.date):
-			result[ColumnName["daterecieved"].value] = str(result[ColumnName["daterecieved"].value])
-		if isinstance(result[ColumnName['lastupdated'].value], datetime.date):
-			result[ColumnName["lastupdated"].value] = str(result[ColumnName["lastupdated"].value])
-
 		return result
 
 	def sortTable(self):
@@ -196,12 +173,8 @@ class RepairTableGUI(object):
 			print("error")
 		if clicks:
 			try: 
-			# print("entire record: ", self.repairTable.model.getRecordAtRow(clicks[0]))
 				recKey = self.repairTable.model.getRecName(clicks[0])
 				self.modifyWidget.createWidget(recKey, self.repairTable.model.getRecordAtRow(clicks[0]))
-				# self.createModifyWidget(recKey ,self.repairTable.model.getRecordAtRow(clicks[0]))
-				# print(clicks[0])
-				# self.repairTable.setSelectedRow(clicks[0])
 			except:
 				pass 
 
