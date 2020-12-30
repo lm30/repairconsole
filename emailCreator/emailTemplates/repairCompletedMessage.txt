@@ -1,0 +1,6 @@
+Subject: Finished #{Repair number}
+Hi {First name},
+
+Item number {Repair number} for repair is now complete. It is ready to ship.
+
+This is an automatic email, please do not reply.

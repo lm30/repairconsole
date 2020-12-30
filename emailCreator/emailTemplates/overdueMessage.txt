@@ -1,0 +1,6 @@
+Subject: Overdue #{Repair number}
+Hi {Repaired by},
+
+Item number {Repair number} for repair is overdue. It was first recieved on {Date recieved} and last updated on {Last updated}.
+
+This is an automatic email, please do not reply.
