@@ -6,6 +6,7 @@ import mysql.connector as mysql
 
 from threading import Timer
 from columnName import ColumnName
+from emailCreator.emailSMTPMaker import EmailSMTPMaker
 
 class OverdueTable(object):
 	# an instance of this object should run once every day
@@ -13,15 +14,18 @@ class OverdueTable(object):
 	def __init__(self, root=None, **kwargs):
 		self.root = root
 		self.dbinfo = kwargs.pop('dbinfo')
-		# self.overdue = 50 # DAYS OVERDUE -- CHANGE LATER
 
 		self.model = TableModel()
+		self.emailHandler = EmailSMTPMaker(
+			"emailCreator/emailTemplates/overdueMessage.txt", 
+			"emailCreator/emailInfo/testuser2020soundsmith.txt"
+		)
 		self.updateOverdueEntries()
 		self.setupTableSchedule()
 
 	def setupTableSchedule(self):
 		# 60 sec * 60 min * 24 hours = 86400 seconds / day
-		self.repeatingTimer = RepeatedTimer(30, self.updateOverdueEntries)
+		self.repeatingTimer = RepeatedTimer(86400, self.updateOverdueEntries)
 
 	def stopSchedule(self):
 		self.repeatingTimer.stop()
@@ -31,7 +35,12 @@ class OverdueTable(object):
 		window.title("Overdue Table")
 
 		# create table 
-		overdueTable = TableCanvas(window, model=self.model, rowselectedcolor='systemTransparent', editable=False, read_only=True)		
+		overdueTable = TableCanvas(window, 
+			model=self.model, 
+			rowselectedcolor='systemTransparent', 
+			editable=False, 
+			read_only=True
+		)		
 		overdueTable.grid()
 		overdueTable.createTableFrame()
 		overdueTable.sortTable(columnName='daterecieved')
@@ -45,13 +54,15 @@ class OverdueTable(object):
 		entries = self.filterOverdueEntries()
 		self.model.importDict(entries)
 
+		self.sendOverdueEmail()
+
+
 	def filterOverdueEntries(self):
 		entries = self.getAllEntries(useDict=True)
 		overdueEntries = {}
 		i = 0
 		for entry in entries:
-			if self.checkOverdue(entry['daterecieved']):
-			# if self.checkOverdue(entry['lastupdated']):
+			if self.checkOverdue(entry['daterecieved']) and entry['status'] != "finished":
 				overdueEntries[i] = self.makeTableReadable(entry)
 				i += 1
 		return overdueEntries
@@ -61,7 +72,12 @@ class OverdueTable(object):
 		# below doesn't work even when I use the sql statement directly 
 		# query = "select * from repairconsole where daterecieved > %s"
 		# query = "select * from repairconsole where daterecieved > " + str(self.getOverdueDate())
-		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+		db_connection = mysql.connect(
+			host=self.dbinfo['host'], 
+			database=self.dbinfo['database'], 
+			user=self.dbinfo['user'], 
+			password=self.dbinfo['password']
+		)
 		entries = {}
 		cursor = db_connection.cursor(dictionary=useDict)
 
@@ -80,7 +96,6 @@ class OverdueTable(object):
 		for key in entry:
 			if key in ColumnName._member_names_:
 				newColName = ColumnName[key].value
-				# result[newColName] = entry[key]
 				if ColumnName.isDate(key):
 					result[newColName] = str(entry[key])
 				else:
@@ -89,10 +104,17 @@ class OverdueTable(object):
 				result[key] = entry[key]
 		return result
 
+	def sendOverdueEmail(self):
+		for item in self.model.data:
+			# need to pull the emails from repairers from separate database OR easily editable file?
+			self.emailHandler.sendEmail("testuser2020soundsmith@gmail.com", self.model.data[item])
+
+	def setSendOverdueEmails(self, boolean):
+		self.sendOverdueEmails = boolean
+
 	def checkOverdue(self, date):
 		overdueDate = date + datetime.timedelta(days=self.overdue)
 		if datetime.datetime.today().date() > overdueDate:
-		# if datetime.datetime.today().date() > self.overdueDate:
 			return True
 		return False
 

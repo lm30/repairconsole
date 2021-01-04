@@ -16,15 +16,32 @@ class RepairTableGUI(object):
 		self.dbinfo = kwargs.pop('dbinfo')
 
 	def createRepairWidget(self):
+		# default colors
+		self.overdueColor = "#ff1100"
+		self.finishedColor = "#869191"
+
 		self.createSearchWidget()
 		self.createTableWidget()
 
-		self.modifyWidget = ModifyWindow(dbinfo=self.dbinfo, model=self.model, table=self.repairTable)
-		self.addWidget = AddItemWindow(dbinfo=self.dbinfo, model=self.model, table=self.repairTable)
+		self.modifyWidget = ModifyWindow(
+			dbinfo=self.dbinfo, 
+			model=self.model, 
+			table=self.repairTable
+		)
+		self.addWidget = AddItemWindow(
+			dbinfo=self.dbinfo, 
+			model=self.model, 
+			table=self.repairTable
+		)
 
 	def createOverdueButton(self, parent):
 		overdueTracker = OverdueTable(self.root, dbinfo=self.dbinfo)
-		button = tk.Button(parent, text="Overdue", command=overdueTracker.createOverdueTable, bg="black", fg="red")
+		button = tk.Button(parent, 
+			text="Overdue", 
+			command=overdueTracker.createOverdueTable, 
+			bg="black", 
+			fg="red"
+		)
 		button.bind("<Destroy>", lambda x: overdueTracker.stopSchedule())
 		return button
 
@@ -33,7 +50,17 @@ class RepairTableGUI(object):
 		self.repairFrame.pack(side=TOP, fill='both', expand=True)
 
 		self.model = TableModel()
-		self.repairTable = TableCanvas(self.repairFrame, model=self.model, cellwidth=30, cellbackgr='#edfafa', thefont=('Arial', 12), rowheight=50, rowheaderwidth=50, rowselectedcolor='systemTransparent', editable=False, read_only=True)		
+		self.repairTable = TableCanvas(self.repairFrame, 
+			model=self.model, 
+			cellwidth=30, 
+			cellbackgr='#edfafa', 
+			thefont=('Arial', 12), 
+			rowheight=50, 
+			rowheaderwidth=50, 
+			rowselectedcolor='systemTransparent', 
+			editable=False, 
+			read_only=True
+		)		
 		self.repairTable.grid(row=50, stick=S)
 		
 		self.getRepairs()
@@ -52,14 +79,35 @@ class RepairTableGUI(object):
 		self.searchStr = tk.StringVar(self.searchFrame)
 		self.searchStr.set('Search by RA')
 
-		self.searchmenu = tk.OptionMenu(self.searchFrame, self.searchStr, 'Search by RA', "Search by last name", "Search by model", "Search by manufacturer", "Search by status")
+		self.searchmenu = tk.OptionMenu(self.searchFrame, self.searchStr, 
+			'Search by RA', 
+			"Search by last name", 
+			"Search by model", 
+			"Search by manufacturer", 
+			"Search by status"
+		)
 		self.searchenter = tk.Entry(self.searchFrame)
-		self.searchbutton = tk.Button(self.searchFrame, text="Search", command=self.searchRepairs) # command = self.searching
-		self.refresh = tk.Button(self.searchFrame, text="Refresh", command=self.refreshRepairs) # command = self.getRepairs
+		self.searchbutton = tk.Button(
+			self.searchFrame, 
+			text="Search", 
+			command=self.searchRepairs
+		)
+		self.refresh = tk.Button(
+			self.searchFrame, 
+			text="Refresh", 
+			command=self.refreshRepairs
+		)
 
 		self.sortStr = tk.StringVar(self.searchFrame)
 		self.sortStr.set('Sort by RA')
-		self.sortmenu = tk.OptionMenu(self.searchFrame, self.sortStr, "Sort by RA", "Sort by last name", "Sort by date recieved", "Sort by last updated", "Sort by status", "Sort by type")
+		self.sortmenu = tk.OptionMenu(self.searchFrame, self.sortStr, 
+			"Sort by RA", 
+			"Sort by last name", 
+			"Sort by date recieved", 
+			"Sort by last updated", 
+			"Sort by status", 
+			"Sort by type"
+		)
 
 		i = 0
 		self.refresh.grid(row=0, column= i)
@@ -70,7 +118,6 @@ class RepairTableGUI(object):
 
 	def searchRepairs(self):
 		# redo this function
-		# also what to do to get back to showing all? Refresh button or blank search space?
 		query = self.createSearchQuery()
 		entries = self.queryDatabase(query, useDict=True)
 
@@ -79,7 +126,6 @@ class RepairTableGUI(object):
 			data[i] = self.changeRowToReadable(entries[i])
 		self.model.deleteRows()
 		self.model.importDict(data)
-		# self.model.resetcolors()
 		self.repairTable.redraw()
 		self.sortTable()
 
@@ -102,7 +148,7 @@ class RepairTableGUI(object):
 		# redo, this is a repeat of the function in overdueTable
 		result = {}
 		for key in entry:
-			# to change column name to a readable version
+			# to change column name to the readable version
 			if key in ColumnName._member_names_: 
 				newColName = ColumnName[key].value
 				if ColumnName.isDate(key):
@@ -133,10 +179,22 @@ class RepairTableGUI(object):
 		for item in self.model.data:
 			# if it is finished
 			if self.model.data[item][ColumnName["status"].value] == "finished":
-				self.colorRow(item, "#869191") # dull blue/grey that needs to be changed
+				self.colorRow(item, self.overdueColor) # dull blue/grey that needs to be changed
 			# elif OverdueTable.isOverdue(self.model.data[item][ColumnName['lastupdated'].value]):
 			elif OverdueTable.isOverdue(self.model.data[item][ColumnName['daterecieved'].value]):
-				self.colorRow(item, "#7F525D") # dull red that should also be changed
+				self.colorRow(item, self.finishedColor) # red that should also be changed
+
+	def setOverdueColor(self, color):
+		self.overdueColor = color
+
+	def setFinishedColor(self, color):
+		self.finishedColor = color
+
+	def setSendFinishedEmails(self, boolean):
+		self.sendFinishedEmails = boolean
+
+	def getFrame(self):
+		return self.repairFrame
 
 	def colorRow(self, key, color):
 		for col in range(len(self.model.data[key])):
@@ -166,8 +224,12 @@ class RepairTableGUI(object):
 		return query + searchString
 
 	def queryDatabase(self, query, useDict=False):
-		# needs to catch errors if no results found
-		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
+		db_connection = mysql.connect(
+			host=self.dbinfo['host'], 
+			database=self.dbinfo['database'], 
+			user=self.dbinfo['user'], 
+			password=self.dbinfo['password']
+		)
 		entries = {}
 		cursor = db_connection.cursor(dictionary=useDict)
 		try:

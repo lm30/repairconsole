@@ -5,13 +5,20 @@ import mysql.connector as mysql
 
 from editWidget import EditWidget
 from columnName import ColumnName
+from overdueTable import OverdueTable
+from emailCreator.emailSMTPMaker import EmailSMTPMaker
 
 class ModifyWindow(EditWidget):
+	def __init__(self, root=None, **kwargs):
+		super(ModifyWindow, self).__init__(root, **kwargs)
+		self.emailHandler = EmailSMTPMaker(
+			"emailCreator/emailTemplates/repairCompletedMessage.txt", 
+			"emailCreator/emailInfo/testuser2020soundsmith.txt"
+		)
 
 	def createWidget(self, recordKey, recordToMod):
 		window = tk.Toplevel()
 		windowTitle = "Repair Number: " + str(recordToMod[ColumnName['repairnumber'].value])
-		# windowTitle = "Repair Number: " + str(recordToMod[ColumnName['repairnumber'].value])
 		window.resizable(False, False)
 		window.title(windowTitle)
 
@@ -19,8 +26,17 @@ class ModifyWindow(EditWidget):
 
 		# change the column and column span so don't have to manually change if more cols appear than 4
 		# why are the buttons not changing colors?
-		tk.Button(window, text="delete", bg='#8eeda8', command= lambda arg1=recordKey, arg2=window: self.deleteRow(arg1, arg2)).grid(row=maxRow + 1, column=0, columnspan=2, sticky=N+S+W+E)
-		tk.Button(window, text="save", bg='black', command= lambda arg1=recordKey, arg2=modifyFields : self.saveModifications(arg1, arg2)).grid(row=maxRow + 1, column=2, columnspan=2, sticky=N+S+E+W)
+		tk.Button(window, 
+			text="delete", 
+			bg='#8eeda8', 
+			command= lambda arg1=recordKey, arg2=window : self.deleteRow(arg1, arg2)
+		).grid(row=maxRow + 1, column=0, columnspan=2, sticky=N+S+W+E)
+		
+		tk.Button(window, 
+			text="save", 
+			bg='black', 
+			command= lambda arg1=recordKey, arg2=modifyFields : self.saveModifications(arg1, arg2)
+		).grid(row=maxRow + 1, column=2, columnspan=2, sticky=N+S+E+W)
 
 		# makes sure destroys self when click the "X" to close
 		window.bind('<Escape>', lambda e: window.destroy())
@@ -28,9 +44,12 @@ class ModifyWindow(EditWidget):
 
 	def deleteRow(self, rowNumber, window):
 		# remove entry from the table, and db then close the window
+		# reset color
+		self.colorRow(rowNumber, "#edfafa")
 		raNumber = self.model.getData()[rowNumber][ColumnName["repairnumber"].value]
-		del self.model.data[rowNumber]
-		self.model.reclist.remove(rowNumber)
+		self.model.deleteRow(rowNumber, rowNumber)
+		# del self.model.data[rowNumber]
+		# self.model.reclist.remove(rowNumber)
 		self.table.redraw()
 		self.table.sortTable(columnName=ColumnName['repairnumber'].value)
 
@@ -53,7 +72,6 @@ class ModifyWindow(EditWidget):
 			self.table.sortTable(columnName=ColumnName['repairnumber'].value)
 
 			query = self.createUpdateQuery(updated, recordKey)
-			# print(query)
 			self.updateDatabase(query)
 
 	def insertText(self, textfield, text):
@@ -67,6 +85,19 @@ class ModifyWindow(EditWidget):
 		for key in updatedFields:
 			self.model.data[recordKey][key] = updatedFields[key]
 
+		# this is essentially a copy from repairtableGUI, change this
+		self.colorRow(recordKey, "#edfafa")
+		if self.model.data[recordKey][ColumnName["status"].value] == "finished":
+			self.colorRow(recordKey, "#869191")
+			# self.sendFinishedEmail(recordKey)
+
+		elif OverdueTable.isOverdue(self.model.data[recordKey][ColumnName['daterecieved'].value]):
+			self.colorRow(recordKey, "#ff1100")
+
+	# def sendFinishedEmail(self, key):
+	# 	# need to pull who to send the email to
+	# 	self.emailHandler.sendEmail("testuser2020soundsmith@gmail.com", self.model.data[key])
+
 	def createUpdateQuery(self, updatedRows, recordKey):
 		query = "update repairconsole set "
 
@@ -77,7 +108,6 @@ class ModifyWindow(EditWidget):
 
 
 	def findUpdatedFields(self, recordKey, fields):
-		## DO NOT ALLOW CHANGES TO THE RA NUMBER. THIS IS A PART THAT WILL NEVER CHANGE FOR A ROW
 		updatedDict = {}
 		for key in fields:
 			# change to check if is instance of scrolled text THEN if is comments key

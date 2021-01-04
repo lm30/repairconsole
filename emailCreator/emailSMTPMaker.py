@@ -9,8 +9,9 @@ class EmailSMTPMaker(EmailMaker):
 		self.emailData["port"] = 465
 
 	def sendEmail(self, receiverEmail, fillIn):
-		receiverEmailList = {receiverEmail: fillIn}
-		self.sendEmails(receiverEmailList)
+		pass
+		# receiverEmailList = {receiverEmail: fillIn}
+		# self.sendEmails(receiverEmailList)
 
 	def sendEmails(self, receiverEmailList):
 		try:

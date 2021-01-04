@@ -16,7 +16,10 @@ class AddItemWindow(EditWidget):
 		fields = {item.value: "" for item in ColumnName}
 		fields, rows = self.createWidgetFields(window, fields)
 
-		tk.Button(window, text="save", command= lambda arg1=fields, arg2=window : self.addItem(fields, window)).grid(columnspan=4, sticky="nsew")
+		tk.Button(window, 
+			text="save", 
+			command= lambda arg1=fields, arg2=window : self.addItem(fields, window)
+		).grid(columnspan=4, sticky="nsew")
 
 		window.bind("<Escape>", lambda e: window.destroy())
 		window.protocol("WM_DELETE_WINDOW", window.destroy)
@@ -52,7 +55,11 @@ class AddItemWindow(EditWidget):
 		addedItems[ColumnName["lastupdated"].value] = addedItems[ColumnName["daterecieved"].value]
 
 		# add row in the table
-		key = self.model.addRow(**addedItems)
+		# tkintertable model's getNextKey doesn't check if its next key is already taken/deleted beforehand
+
+		# print(self.model.data.keys())
+		newKey = self.getNextKey()
+		key = self.model.addRow(key=newKey, **addedItems)
 		self.table.redraw()
 		self.table.sortTable(columnName=ColumnName["repairnumber"].value)
 
@@ -60,6 +67,18 @@ class AddItemWindow(EditWidget):
 		self.updateDatabase(query, values=valuesList)
 
 		window.destroy()
+
+	def getNextKey(self):
+		""" 
+		Returns the next possible key in the model dictionary 
+		"""
+		# because tkintertable doesn't check if its next possible key 
+		# is already in the dictionary due to deletion 
+		num = len(self.model.reclist) + 1
+		while num in self.model.reclist:
+			num += 1
+		return num
+
 
 	def createAddQuery(self, addedColumns):
 		# since addedColumns is a dictionary, and order isn't necessarily preserved here

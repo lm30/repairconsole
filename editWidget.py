@@ -33,13 +33,33 @@ class EditWidget(object):
 				i = 0
 			elif key == ColumnName["status"].value:
 				field = tk.StringVar(window)
-				options = ["received", "inspected", "in progress", "finished", "shipped" ]
+				options = [
+					"received", 
+					"inspected", 
+					"in progress", 
+					"finished", 
+					"shipped" 
+				]
 				if not recordToMod[key]: field.set(options[0])
 				else: field.set(recordToMod[key])
 				entry = tk.OptionMenu(window, field, *options)
 			elif key == ColumnName["typeof"].value:
 				field = tk.StringVar(window)
-				options = ["amplifier", "amplified speaker", "cassette player", "cartridge", "cd player","compact system", "preamp", "receiver", "reel to reel", "turntable", "tuner", "voltage conversion", "other"]
+				options = [
+					"amplifier", 
+					"amplified speaker", 
+					"cassette player", 
+					"cartridge", 
+					"cd player",
+					"compact system", 
+					"preamp", 
+					"receiver", 
+					"reel to reel", 
+					"turntable", 
+					"tuner", 
+					"voltage conversion", 
+					"other"
+				]
 				if not recordToMod[key]: field.set(options[0])
 				else: field.set(recordToMod[key])
 				entry = tk.OptionMenu(window, field, *options)
@@ -65,7 +85,13 @@ class EditWidget(object):
 	def updateDatabase(self, query, values=None):
 		# update and commit to the databse
 		# will autocommit to the database
-		db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'], autocommit=True)
+		db_connection = mysql.connect(
+			host=self.dbinfo['host'], 
+			database=self.dbinfo['database'], 
+			user=self.dbinfo['user'], 
+			password=self.dbinfo['password'], 
+			autocommit=True
+		)
 		
 		# for testing purposes, keep this uncommented
 		# db_connection = mysql.connect(host=self.dbinfo['host'], database=self.dbinfo['database'], user=self.dbinfo['user'], password=self.dbinfo['password'])
@@ -116,3 +142,11 @@ class EditWidget(object):
 	def focusNextWindow(self, event):
 		event.widget.tk_focusNext().focus()
 		return ("break")
+
+
+	def colorRow(self, key, color):
+		key2 = self.model.reclist.index(key)
+		for col in range(len(self.model.data[key])):
+			# colName = self.model.getColumnName(colIndex)
+			# self.model.colors[key][key][colName] = str(color)
+			self.model.setColorAt(key2, col, color)

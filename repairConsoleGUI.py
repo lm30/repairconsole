@@ -8,6 +8,7 @@ from tkintertable import TableCanvas, TableModel
 import mysql.connector as mysql
 
 from repairTableGUI import RepairTableGUI
+from settingsWidget import SettingsWidget
 
 class RepairGUI(object):
 	def __init__(self, root=None, **kwargs):
@@ -16,6 +17,8 @@ class RepairGUI(object):
 		self.root = root
 		self.root.title(self.title)
 		self.root.protocol("WM_DELETE_WINDOW", self.closeGUI)
+
+		self.frames = {}
 
 		self.dbinfo = {}
 		self.setup()
@@ -26,18 +29,35 @@ class RepairGUI(object):
 		height = self.root.winfo_screenheight()
 		self.root.geometry(f'{width}x{height}')
 
-		# setting the frame as pack
-		frame = tk.Frame(self.root)
-		frame.pack()
+		# self.container = tk.Frame(tk.Tk)
+		# # container = tk.Frame(self.root)
+		# self.container.pack(side=TOP, fill="both", expand=True)
+		# self.container.grid_rowconfigure(0, weight=1)
+		# self.container.grid_columnconfigure(0, weight=1)
 
+		self.settingsWidget = SettingsWidget(self.root, settingFile="settings.txt")
 		self.readDBFile()
 		self.createRepairTable()
 
-		addItemBtn = tk.Button(self.root, text="Add item", command=self.repTable.addItemWidget)
-		addItemBtn.pack(fill=tk.BOTH,side=tk.RIGHT, expand=True)
+		self.settingsWidget.setOverdue()
+		self.settingsWidget.setRepairTable(self.repTable)
+
+		# self.frames["repairFrame"] = self.repTable.getFrame()
+		# self.frames['settingsFrame'] = self.settingsWidget.getFrame()
+
+		addItemBtn = tk.Button(
+			self.root, 
+			text="Add item", 
+			command=self.repTable.addItemWidget
+		)
+		addItemBtn.pack(fill=tk.BOTH, side=tk.RIGHT, expand=True)
+
+		# buttonSettings = tk.Button(self.root, text="Settings", command=self.showFrame('settingsFrame'))
+		# buttonSettings = tk.Button(self.root, text="Settings", command=self.settingsWidget)
+		# buttonSettings.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
 
 		buttonOverdue = self.repTable.createOverdueButton(self.root)
-		buttonOverdue.pack(fill=tk.BOTH,side=tk.LEFT, expand=True)
+		buttonOverdue.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
 
 	def readDBFile(self):
 		with open("dbInfoFile.txt", "r") as datafile:
@@ -53,6 +73,10 @@ class RepairGUI(object):
 		# upon clicking the red "X" to close the application
 		# if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
 		self.root.destroy()
+
+	# def showFrame(self, frameName):
+	# 	frame = self.frames[frameName]
+	# 	frame.tkraise()
 
 def main():
 	root = tk.Tk()
