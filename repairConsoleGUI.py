@@ -30,17 +30,16 @@ class RepairGUI(object):
 		self.root.geometry(f'{width}x{height}')
 
 		# self.container = tk.Frame(tk.Tk)
-		# # container = tk.Frame(self.root)
-		# self.container.pack(side=TOP, fill="both", expand=True)
-		# self.container.grid_rowconfigure(0, weight=1)
-		# self.container.grid_columnconfigure(0, weight=1)
+		# self.container = tk.Frame(self.root)
+		# self.container.grid(column=0, row=0)
 
-		self.settingsWidget = SettingsWidget(self.root, settingFile="settings.txt")
+		# self.settingsWidget = SettingsWidget(self.root, settingFile="settings.txt")
 		self.readDBFile()
 		self.createRepairTable()
 
-		self.settingsWidget.setOverdue()
-		self.settingsWidget.setRepairTable(self.repTable)
+		# apply settings
+		# self.settingsWidget.setOverdue()
+		# self.settingsWidget.setRepairTable(self.repTable)
 
 		# self.frames["repairFrame"] = self.repTable.getFrame()
 		# self.frames['settingsFrame'] = self.settingsWidget.getFrame()
@@ -78,10 +77,11 @@ class RepairGUI(object):
 	# 	frame = self.frames[frameName]
 	# 	frame.tkraise()
 
-def main():
+def run():
 	root = tk.Tk()
 	repairGUI = RepairGUI(root, title="Repair Console")
 	root.mainloop()
 
+# run()
 if __name__ == '__main__':
-	main()
+	run()

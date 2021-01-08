@@ -17,8 +17,8 @@ class RepairTableGUI(object):
 
 	def createRepairWidget(self):
 		# default colors
-		self.overdueColor = "#ff1100"
-		self.finishedColor = "#869191"
+		self.overdueColor = "#869191"
+		self.finishedColor = "#ff1100"
 
 		self.createSearchWidget()
 		self.createTableWidget()
@@ -184,17 +184,17 @@ class RepairTableGUI(object):
 			elif OverdueTable.isOverdue(self.model.data[item][ColumnName['daterecieved'].value]):
 				self.colorRow(item, self.finishedColor) # red that should also be changed
 
-	def setOverdueColor(self, color):
-		self.overdueColor = color
+	# def setOverdueColor(self, color):
+	# 	self.overdueColor = color
 
-	def setFinishedColor(self, color):
-		self.finishedColor = color
+	# def setFinishedColor(self, color):
+	# 	self.finishedColor = color
 
-	def setSendFinishedEmails(self, boolean):
-		self.sendFinishedEmails = boolean
+	# def setSendFinishedEmails(self, boolean):
+	# 	self.sendFinishedEmails = boolean
 
-	def getFrame(self):
-		return self.repairFrame
+	# def getFrame(self):
+	# 	return self.repairFrame
 
 	def colorRow(self, key, color):
 		for col in range(len(self.model.data[key])):

@@ -10,7 +10,9 @@ from emailCreator.emailSMTPMaker import EmailSMTPMaker
 
 class OverdueTable(object):
 	# an instance of this object should run once every day
-	overdue = 50
+
+	# the number of days that can pass before a repair becomes overdue
+	overdue = 60
 	def __init__(self, root=None, **kwargs):
 		self.root = root
 		self.dbinfo = kwargs.pop('dbinfo')
@@ -54,7 +56,7 @@ class OverdueTable(object):
 		entries = self.filterOverdueEntries()
 		self.model.importDict(entries)
 
-		self.sendOverdueEmail()
+		# self.sendOverdueEmail()
 
 
 	def filterOverdueEntries(self):
@@ -104,13 +106,13 @@ class OverdueTable(object):
 				result[key] = entry[key]
 		return result
 
-	def sendOverdueEmail(self):
-		for item in self.model.data:
-			# need to pull the emails from repairers from separate database OR easily editable file?
-			self.emailHandler.sendEmail("testuser2020soundsmith@gmail.com", self.model.data[item])
+	# def sendOverdueEmail(self):
+	# 	for item in self.model.data:
+	# 		# need to pull the emails from repairers from separate database OR easily editable file?
+	# 		self.emailHandler.sendEmail("testuser2020soundsmith@gmail.com", self.model.data[item])
 
-	def setSendOverdueEmails(self, boolean):
-		self.sendOverdueEmails = boolean
+	# def setSendOverdueEmails(self, boolean):
+	# 	self.sendOverdueEmails = boolean
 
 	def checkOverdue(self, date):
 		overdueDate = date + datetime.timedelta(days=self.overdue)
